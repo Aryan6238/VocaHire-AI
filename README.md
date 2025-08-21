@@ -27,7 +27,6 @@ It analyzes resumes, asks intelligent questions, records answers, provides feedb
 ------------------------------------------------------------
 📂 Project Structure
 ------------------------------------------------------------
-'''
 mock_interviewer/
 │── app.py                  # Flask backend
 │── requirements.txt        # Dependencies
@@ -42,7 +41,6 @@ mock_interviewer/
 │── resume_parser.py        # Resume parsing logic
 │── voice_processor.py      # Audio recording + processing
 │── question_gen.py         # Question & follow-up generator
-'''
 
 ------------------------------------------------------------
 ⚙️ Installation
