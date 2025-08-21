@@ -1,0 +1,126 @@
+/* General Page Styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to right, #fdfbfb, #ebedee);
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+/* Header */
+h1, h2, h3 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+/* Main Container */
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 30px;
+    border-radius: 12px;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Upload Section */
+.upload-section {
+    text-align: center;
+    margin-bottom: 25px;
+    background-color: transparent !important;
+}
+
+/* Upload Input */
+input[type="file"] {
+    display: block;
+    margin: 10px auto;
+    border: 1px dashed #aaa;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+
+/* Buttons - FORCE vertical column layout */
+button {
+    display: block !important;
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto !important;
+    background: #007BFF;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+/* Transparent result and question boxes */
+#resumeResults, #questionSection, #feedbackDisplay {
+    background-color: transparent !important;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Resume List Styling */
+#resumeResults ul, #resumeResults ol {
+    margin-left: 20px;
+}
+
+/* Audio Player */
+audio {
+    display: block;
+    margin: 20px auto;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Individual Question Box */
+.question-box {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    border: 2px solid #007BFF;
+    border-radius: 8px;
+    background-color: transparent !important;
+}
+
+/* Next Button */
+#nextQuestionBtn {
+    background-color: #28a745;
+}
+
+#nextQuestionBtn:hover {
+    background-color: #1c7c34;
+}
+
+/* Feedback Text */
+#feedbackDisplay p {
+    font-size: 16px;
+    margin: 6px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    button {
+        width: 100%;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+}

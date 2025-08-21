@@ -1,0 +1,11 @@
+flask==3.0.2
+flask-cors==4.0.0
+flask-sqlalchemy==3.1.1
+python-dotenv==1.0.0
+openai-whisper==20230314
+torch==2.2.1
+transformers==4.41.0
+PyPDF2==3.0.1
+TTS==0.22.0
+bangla==0.0.2
+tinyllama  # (if used manually)

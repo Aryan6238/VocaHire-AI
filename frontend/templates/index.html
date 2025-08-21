@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Mock Interviewer</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url("/static/images/image.jpg") no-repeat center center fixed;
+      background-size: cover;
+      background-blend-mode: lighten;
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 80%;
+      height: 80%;
+      background: url("/static/images/image.jpg") no-repeat center center fixed;
+      background-size: cover;
+      opacity: 0.9;
+      z-index: -2;
+    }
+    header {
+      background-color: #3892ecff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(240, 235, 235, 0.95);
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0);
+    }
+    h1, h2 {
+      color: #2679e6ff;
+    }
+    button {
+      background: #1e90ff;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin: 5px 5px 5px 0;
+    }
+    button:hover {
+      background: #e70e0eff;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .custom-file-upload {
+      display: inline-block;
+      background: #1e90ff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 15px;
+      transition: background 0.3s ease;
+    }
+    .custom-file-upload:hover {
+      background-color: #e60202ff;
+    }
+    #file-chosen {
+      margin-left: 15px;
+      font-style: italic;
+      font-size: 14px;
+      color: #444;
+    }
+    audio {
+      margin-top: 10px;
+      display: block;
+      width: 100%;
+    }
+    .result {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      color: #333;
+    }
+    .question-box {
+      font-size: 1.1rem;
+      background: #f0f8ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #b3d7ff;
+      position: relative;
+    }
+    .speaker-icon {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+    /* Enhanced feedback styles */
+    .feedback-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .feedback-section {
+      margin-bottom: 15px;
+    }
+    .feedback-header {
+      color: #2679e6;
+      margin-bottom: 10px;
+    }
+    .feedback-row {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    .feedback-label {
+      font-weight: bold;
+      min-width: 120px;
+      color: #555;
+    }
+    .feedback-value {
+      flex-grow: 1;
+    }
+    .expected-answer {
+      background: #f8f9fa;
+      border-left: 3px solid #2679e6;
+      padding: 10px;
+      margin: 10px 0;
+      font-style: italic;
+    }
+    .rating {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.9em;
+      margin-left: 5px;
+    }
+    .excellent { background: #4CAF50; color: white; }
+    .good { background: #8BC34A; color: white; }
+    .average { background: #FFC107; color: black; }
+    .needs-work { background: #F44336; color: white; }
+    .progress-container {
+      width: 100%;
+      background: #f3f3f3;
+      border-radius: 5px;
+      margin: 5px 0;
+    }
+    .progress-bar {
+      height: 20px;
+      border-radius: 5px;
+      background: #4CAF50;
+      text-align: center;
+      line-height: 20px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎯 AI Mock Interviewer</h1>
+    <p>Get ready for your interview with Voice AI Agent!</p>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>📄 Upload Resume</h2>
+      <label for="resumeUpload" class="custom-file-upload">📁 Choose Resume File</label>
+      <input type="file" id="resumeUpload" accept=".pdf" />
+      <span id="file-chosen"></span><br><br>
+      <button id="analyzeBtn">Analyze Resume</button>
+      <div id="resumeResults"></div>
+    </div>
+
+    <div class="card">
+      <h2>🎤 Practice Interview</h2>
+
+      <div class="question-box" id="questionDisplay">
+        <span id="questionText">No question yet</span>
+        <span class="speaker-icon" onclick="speakCurrentQuestion()">🔊</span>
+      </div>
+
+      <button id="nextQuestionBtn" disabled>Next Question</button>
+      <button id="startBtn" disabled>🎙️ Start Recording</button>
+      <button id="stopBtn" disabled>🛑 Stop Recording</button>
+      <button id="submitBtn" disabled>📤 Submit Answer</button>
+
+      <audio id="audioPlayer" controls></audio>
+      <div id="feedbackDisplay"></div>
+    </div>
+  </div>
+
+  <script>
+    // State variables
+    let questions = [];
+    let followUpQuestions = [];
+    let currentQuestionIndex = 0;
+    let allFeedback = [];
+    let interviewStage = "resume"; // 'resume', 'followup', or 'complete'
+    let mediaRecorder;
+    let audioChunks = [];
+
+    // Speech functions
+    function speakText(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
+    function speakCurrentQuestion() {
+      let currentQuestion;
+      if (interviewStage === "resume") {
+        currentQuestion = questions[currentQuestionIndex];
+      } else if (interviewStage === "followup") {
+        currentQuestion = followUpQuestions[currentQuestionIndex];
+      }
+      speakText(currentQuestion || "");
+    }
+
+    // Resume analysis
+    document.getElementById("analyzeBtn").onclick = async () => {
+      const fileInput = document.getElementById("resumeUpload");
+      const file = fileInput.files[0];
+      if (!file) return alert("Please select a PDF file.");
+
+      const formData = new FormData();
+      formData.append("resume", file);
+
+      try {
+        const res = await fetch("/api/analyze-resume", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        
+       document.getElementById("resumeResults").innerHTML = `
+          <h3>Skills Found:</h3>
+          <ul>${data.analysis.skills.map(s => `<li>${s}</li>`).join('')}</ul>
+          <h3>Important Rules:</h3>
+          <ol>
+            <li>Rule 1: Be honest and clear in your responses.</li>
+            <li>Rule 2: Speak confidently and maintain eye contact.</li>
+            <li>Rule 3: Give real-world examples whenever possible.</li>
+            <li>Rule 4: Do not rush—think before you answer.</li>
+            <li>        🎯 ALL THE BEST...!!!</li>
+          </ol>
+      `;
+
+        questions = data.questions || [];
+        currentQuestionIndex = 0;
+        interviewStage = "resume";
+
+        if (questions.length > 0) {
+          document.getElementById("questionText").innerText = questions[0];
+          speakCurrentQuestion();
+          document.getElementById("nextQuestionBtn").disabled = false;
+          document.getElementById("startBtn").disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error analyzing resume");
+      }
+    };
+
+    // File input handler
+    document.getElementById("resumeUpload").addEventListener("change", function() {
+      const fileName = this.files[0] ? this.files[0].name : "No file chosen";
+      document.getElementById("file-chosen").textContent = fileName;
+    });
+
+    // Next question handler
+    document.getElementById("nextQuestionBtn").onclick = () => {
+      if (interviewStage === "resume") {
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex >= questions.length) {
+          if (followUpQuestions.length > 0) {
+            interviewStage = "followup";
+            currentQuestionIndex = 0;
+            document.getElementById("questionText").innerText = "Now we'll ask some follow-up questions";
+            setTimeout(() => {
+              showCurrentQuestion();
+            }, 2000);
+          } else {
+            completeInterview();
+          }
+        } else {
+          showCurrentQuestion();
+        }
+      } else if (interviewStage === "followup") {
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex >= followUpQuestions.length) {
+          completeInterview();
+        } else {
+          showCurrentQuestion();
+        }
+      }
+    };
+
+    function showCurrentQuestion() {
+      let currentQuestion;
+      if (interviewStage === "resume") {
+        currentQuestion = questions[currentQuestionIndex];
+      } else if (interviewStage === "followup") {
+        currentQuestion = followUpQuestions[currentQuestionIndex];
+      }
+      
+      document.getElementById("questionText").innerText = currentQuestion;
+      speakCurrentQuestion();
+      document.getElementById("feedbackDisplay").innerHTML = "";
+      document.getElementById("submitBtn").disabled = true;
+    }
+
+    // Recording functionality
+    document.getElementById("startBtn").onclick = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.start();
+        document.getElementById("startBtn").disabled = true;
+        document.getElementById("stopBtn").disabled = false;
+
+        mediaRecorder.ondataavailable = e => {
+          audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/mp3' });
+          const url = URL.createObjectURL(blob);
+          document.getElementById("audioPlayer").src = url;
+          document.getElementById("audioPlayer").audioBlob = blob;
+          document.getElementById("submitBtn").disabled = false;
+        };
+      } catch (err) {
+        alert("Microphone access denied");
+      }
+    };
+
+    document.getElementById("stopBtn").onclick = () => {
+      mediaRecorder.stop();
+      document.getElementById("startBtn").disabled = false;
+      document.getElementById("stopBtn").disabled = true;
+    };
+
+    // Submit answer handler
+    // Updated submit answer handler with proper backend integration
+    document.getElementById("submitBtn").onclick = async () => {
+      const audioBlob = document.getElementById("audioPlayer").audioBlob;
+      if (!audioBlob) return;
+
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "response.mp3");
+      
+      // Add current question context to help backend generate relevant feedback
+      const currentQuestion = interviewStage === "resume" 
+        ? questions[currentQuestionIndex] 
+        : followUpQuestions[currentQuestionIndex];
+      formData.append("question", currentQuestion);
+
+      document.getElementById("feedbackDisplay").innerHTML = "⏳ Analyzing your answer...";
+
+      try {
+        const res = await fetch("/api/process-audio", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          // Store feedback for final display
+          allFeedback.push({
+            question: currentQuestion,
+            transcript: data.transcript,
+            feedback: data.feedback,
+            expected_answer: data.expected_answer,
+            proficiency: data.proficiency || 75, // Default values if not provided
+            confidence: data.confidence || 70    // Default values if not provided
+          });
+
+          // Store any follow-up questions
+          if (data.follow_up) {
+            followUpQuestions.push(data.follow_up);
+          }
+
+          // Display enhanced feedback
+          displayQuestionFeedback(data, currentQuestion);
+        } else {
+          showErrorFeedback(data.error);
+        }
+      } catch (err) {
+        console.error(err);
+        showErrorFeedback("Network error - please try again");
+      }
+    };
+
+    // Enhanced feedback display function
+    function displayQuestionFeedback(feedbackData, question) {
+      const proficiency = feedbackData.proficiency || 75;
+      const confidence = feedbackData.confidence || 70;
+      
+      const proficiencyLevel = getRatingLevel(proficiency, 'proficiency');
+      const confidenceLevel = getRatingLevel(confidence, 'confidence');
+
+      const feedbackHTML = `
+        <div class="feedback-container">
+          <div class="feedback-section">
+            <h3 class="feedback-header">Question Analysis</h3>
+            <div class="feedback-row">
+              <span class="feedback-label">Question:</span>
+              <span class="feedback-value">${question}</span>
+            </div>
+            <div class="feedback-row">
+              <span class="feedback-label">Your Answer:</span>
+              <span class="feedback-value">${feedbackData.transcript || "Not available"}</span>
+            </div>
+          </div>
+          
+          <div class="feedback-section">
+            <h3 class="feedback-header">Evaluation</h3>
+            <div class="feedback-row">
+              <span class="feedback-label">Feedback:</span>
+              <span class="feedback-value">${feedbackData.feedback || "No specific feedback available"}</span>
+            </div>
+            
+            <div class="feedback-row">
+              <span class="feedback-label">Proficiency:</span>
+              <span class="feedback-value">
+                <span class="rating ${proficiencyLevel.class}">${proficiencyLevel.text}</span>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: ${proficiency}%">${proficiency}%</div>
+                </div>
+              </span>
+            </div>
+            
+            <div class="feedback-row">
+              <span class="feedback-label">Confidence:</span>
+              <span class="feedback-value">
+                <span class="rating ${confidenceLevel.class}">${confidenceLevel.text}</span>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: ${confidence}%">${confidence}%</div>
+                </div>
+              </span>
+            </div>
+          </div>
+          
+          <div class="feedback-section">
+            <h3 class="feedback-header">Expected Answer</h3>
+            <div class="expected-answer">
+              ${feedbackData.expected_answer || "No expected answer provided by the system"}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("feedbackDisplay").innerHTML = feedbackHTML;
+    }
+
+    function getRatingLevel(score, type) {
+      if (type === 'proficiency') {
+        if (score >= 85) return { text: "Excellent", class: "excellent" };
+        if (score >= 70) return { text: "Good", class: "good" };
+        if (score >= 50) return { text: "Average", class: "average" };
+        return { text: "Needs Work", class: "needs-work" };
+      } else {
+        if (score >= 80) return { text: "High", class: "excellent" };
+        if (score >= 60) return { text: "Moderate", class: "good" };
+        if (score >= 40) return { text: "Low", class: "average" };
+        return { text: "Very Low", class: "needs-work" };
+      }
+    }
+
+    function showErrorFeedback(message) {
+      document.getElementById("feedbackDisplay").innerHTML = `
+        <div class="feedback-container" style="color: #F44336;">
+          <h3>❌ Error Processing Feedback</h3>
+          <p>${message}</p>
+          <p>Please try answering again or contact support if the problem persists.</p>
+        </div>
+      `;
+    }
+    // complete interview function
+    function completeInterview() {
+      interviewStage = "complete";
+      document.getElementById("questionText").innerText = "✅ Interview Complete!";
+      document.getElementById("nextQuestionBtn").disabled = true;
+      document.getElementById("startBtn").disabled = true;
+      document.getElementById("stopBtn").disabled = true;
+      document.getElementById("submitBtn").disabled = true;
+
+      // Show comprehensive feedback
+      let feedbackHTML = `<div class="feedback-section"><h2>📊 Final Feedback Report</h2>`;
+      
+      allFeedback.forEach((item, index) => {
+        feedbackHTML += `
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+            <h3>Question ${index + 1}: ${item.question}</h3>
+            <p><strong>Your Answer:</strong> ${item.transcript}</p>
+            <p><strong>Feedback:</strong> ${item.feedback}</p>
+          </div>
+        `;
+      });
+
+      feedbackHTML += `</div>`;
+      document.getElementById("feedbackDisplay").innerHTML = feedbackHTML;
+    }
+  </script>
+</body>
+</html>
