@@ -1,79 +1,86 @@
-# =====================================================
-#  VocaHire AI - Voice-based Mock Interview System
-# =====================================================
+# VocaHire AI 🎙️🤖
 
-# 🚀 Project Overview
-# VocaHire AI is a voice-interactive mock interview system
-# built with Flask, Hugging Face, and OpenAI Whisper.
-# It analyzes resumes, generates AI-driven interview questions,
-# records candidate responses, provides feedback, and asks follow-ups.
+AI-powered voice-based mock interviewer designed to help candidates prepare for real-world interviews.  
+It analyzes resumes, asks intelligent questions, records answers, provides feedback, and generates follow-up questions — all in real-time.
 
-# ✨ Features
-# - Resume Parsing (extracts key skills & experience)
-# - AI-Powered Question Generation
-# - Text-to-Speech (TTS) for asking questions
-# - Browser-based Voice Recording for answers
-# - Whisper Speech-to-Text transcription
-# - AI Feedback on candidate responses
-# - Smart Follow-up Questions
+------------------------------------------------------------
+🚀 Features
+------------------------------------------------------------
+- 📄 Resume Parsing: Extracts key details from resumes.
+- 🎤 Voice Interaction: Converts questions to speech and records candidate answers.
+- ✍️ Answer Analysis: Transcribes speech to text and reviews answers.
+- 🔄 Follow-up Questions: Generates dynamic follow-ups based on responses.
+- 🌐 Web-based UI: Simple, interactive frontend with one-question-at-a-time flow.
+- 📊 Feedback: Provides separate review for each answer.
 
-# 🛠️ Tech Stack
-# - Backend: Flask (Python)
-# - AI Models: Hugging Face (GLM / LLMs), Whisper
-# - Frontend: HTML + CSS + JavaScript
-# - Audio: Web Audio API, gTTS / pyttsx3
-# - Version Control: Git + GitHub
+------------------------------------------------------------
+🛠️ Tech Stack
+------------------------------------------------------------
+- Backend: Flask (Python)
+- Frontend: HTML, CSS, JavaScript
+- NLP Models: Hugging Face Transformers
+- TTS: gTTS / pyttsx3
+- STT: OpenAI Whisper
+- Storage: Local (audio & resumes)
+- Version Control: Git & GitHub
 
-# 📂 Project Structure
-# ├── app.py                 # Flask backend
-# ├── requirements.txt       # Dependencies
-# ├── uploads/               # Resume uploads
-# ├── frontend/
-# │   ├── static/
-# │   │   └── audio/         # Saved audio responses
-# │   └── templates/
-# │       └── index.html     # Main UI
-# ├── models/                # AI models & pipelines
-# ├── resume_parser/         # Resume parsing logic
-# ├── voice_processor/       # Audio handling
-# └── question_gen/          # Question + follow-up generation
+------------------------------------------------------------
+📂 Project Structure
+------------------------------------------------------------
+mock_interviewer/
+│── app.py                  # Flask backend
+│── requirements.txt        # Dependencies
+│── uploads/                # Uploaded resumes
+│── frontend/
+│   ├── index.html          # Main UI
+│   ├── static/
+│   │   ├── css/            # Styles
+│   │   ├── js/             # Scripts
+│   │   ├── audio/          # Recorded audio files
+│── models/                 # AI/NLP models
+│── resume_parser.py        # Resume parsing logic
+│── voice_processor.py      # Audio recording + processing
+│── question_gen.py         # Question & follow-up generator
 
-# ⚙️ Setup Instructions
+------------------------------------------------------------
+⚙️ Installation
+------------------------------------------------------------
 # Clone the repository
-git clone https://github.com/Aryan6238/VocaHire-AI.git
+git clone https://github.com/your-username/VocaHire-AI.git
 cd VocaHire-AI
 
-# Create virtual environment (recommended)
+# Create a virtual environment
 python -m venv venv
-source venv/bin/activate   # On Linux/Mac
+source venv/bin/activate   # On Mac/Linux
 venv\Scripts\activate      # On Windows
 
 # Install dependencies
 pip install -r requirements.txt
 
+------------------------------------------------------------
+▶️ Usage
+------------------------------------------------------------
 # Run the Flask app
 python app.py
 
 # Open in browser
-# http://127.0.0.1:5000/
+http://127.0.0.1:5000/
 
-# 🤖 How It Works
-# 1. Upload Resume → Extracts skills & experience
-# 2. AI Generates Questions → Displays & plays via TTS
-# 3. Candidate Records Answer → Audio saved locally
-# 4. Whisper Transcribes → Converts speech → text
-# 5. AI Feedback → Provides review of response
-# 6. Follow-up Questions → Dynamically generated if needed
+------------------------------------------------------------
+📌 Future Improvements
+------------------------------------------------------------
+- Add multi-language support for interviews
+- Advanced AI-driven scoring system
+- Cloud deployment (AWS/GCP/Azure)
+- Candidate performance dashboard
 
-# 📈 Future Enhancements
-# - Multi-language interview support
-# - AI scoring system (candidate ranking)
-# - Dashboard for interview analytics
-# - Cloud deployment with Docker
+------------------------------------------------------------
+🤝 Contributing
+------------------------------------------------------------
+Pull requests are welcome!  
+For major changes, please open an issue first to discuss what you’d like to change.
 
-# 🧑‍💻 Author
-# Aryan Vishal Jalak
-# B.Tech CSE (AI & Analytics), MIT ADT University, Pune
-
-# 📜 License
-# MIT License
+------------------------------------------------------------
+📜 License
+------------------------------------------------------------
+MIT License
