@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+<<<<<<< HEAD
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>AI Mock Interviewer</title>
+      <link rel="stylesheet" href="/static/css/style.css" />
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; padding:0; background: url('/static/images/image.jpg') no-repeat center center fixed; background-size: cover; }
+        header { background-color:#3892ecff; color:#fff; padding:18px 12px; text-align:center; }
+        .container { max-width:920px; margin:20px auto; padding:18px; }
+        .card { background: rgba(250,250,250,0.95); padding:18px; margin-bottom:20px; border-radius:8px; }
+        h1,h2 { color:#1f6fe0; }
+        button{ background:#1e90ff;color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer }
+        .custom-file-upload{ display:inline-block; padding:8px 12px; background:#1e90ff; color:#fff; border-radius:6px; cursor:pointer }
+        input[type=file]{ display:none }
+        .result{ margin-top:10px; white-space:pre-wrap }
+        .question-box{ background:#f7fbff; padding:12px; border-radius:8px; margin-bottom:10px }
+      </style>
+    </head>
+    <body>
+      <header>
+        <h1>🎯 AI Mock Interviewer</h1>
+        <p>Get ready for your interview with Voice AI Agent</p>
+      </header>
+
+      <div class="container">
+        <div id="page-upload" class="page">
+          <div class="card">
+            <h2>📄 Upload Resume</h2>
+            <label class="custom-file-upload" for="resumeUpload">📁 Choose Resume File</label>
+            <input id="resumeUpload" type="file" accept=".pdf" />
+            <span id="file-chosen" style="margin-left:12px;font-style:italic">No file chosen</span>
+            <div style="margin-top:12px">
+              <button id="analyzeBtn" style="display:none">Analyze Resume</button>
+              <button id="toCameraBtn" style="display:none; margin-left:8px">Proceed to Camera</button>
+            </div>
+            <div id="resumeResults" class="result"></div>
+          </div>
+        </div>
+
+        <div id="page-proctor" class="page" style="display:none">
+          <div class="card">
+            <h2>📷 Camera & Proctoring</h2>
+            <p>Please follow these instructions before starting:</p>
+            <ol>
+              <li>Only the interviewee should be visible on camera.</li>
+              <li>Don't use external help or devices to assist answers.</li>
+              <li>Ensure your face is well-lit and centered.</li>
+            </ol>
+            <video id="proctorVideo" width="560" height="420" autoplay muted playsinline style="background:#000;border-radius:8px"></video>
+            <div style="margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+              <button id="enableCamBtn">Enable Webcam</button>
+              <span>Status: <strong id="proctorState">Inactive</strong></span>
+              <span>Faces: <strong id="facesNum">0</strong></span>
+            </div>
+            <div style="margin-top:10px">
+              <button id="proceedInterviewBtn" style="display:none">Start Interview</button>
+              <button id="backToUploadBtn">Back to Resume</button>
+            </div>
+            <div id="proctorLog" class="result" style="max-height:180px; overflow:auto; margin-top:10px"></div>
+          </div>
+        </div>
+
+        <div id="page-interview" class="page" style="display:none">
+          <div class="card">
+            <h2>🎤 Interview</h2>
+            <div class="question-box">
+              <div id="questionText">No question yet</div>
+              <div style="text-align:right"><button id="speakBtn">🔊 Speak</button></div>
+            </div>
+            <div style="margin-bottom:8px">
+              <button id="startBtn" style="display:none">🎙️ Start Recording</button>
+              <button id="stopBtn" style="display:none">🛑 Stop Recording</button>
+              <button id="submitBtn" style="display:none">📤 Submit Answer</button>
+              <button id="nextQuestionBtn" style="display:none">Next Question</button>
+            </div>
+            <audio id="audioPlayer" controls style="width:100%"></audio>
+            <div id="feedbackDisplay" class="result"></div>
+          </div>
+        </div>
+
+        <div id="page-report" class="page" style="display:none">
+          <div class="card">
+            <h2>✅ Test Completed</h2>
+            <div id="finalReport" class="result"></div>
+            <div style="margin-top:12px"><button id="restartBtn">Start Over</button></div>
+          </div>
+        </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
+
+      <script>
+        // Consolidated client-side script
+        function showPage(id){ ['page-upload','page-proctor','page-interview','page-report'].forEach(pid=>{ const el=document.getElementById(pid); if(el) el.style.display = (pid===id?'':'none'); }); window.scrollTo(0,0); }
+        let questions = [], followUpQuestions = [], currentQuestionIndex = 0, allFeedback = [], interviewStage = 'resume', mediaRecorder, audioChunks;
+        let proctorModel = null, proctorStream = null, detectionInterval = null; const sessionId = Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+        function speakText(t){ if(!t) return; const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+
+        document.addEventListener('DOMContentLoaded', ()=>{
+          const resumeInput = document.getElementById('resumeUpload');
+          const analyzeBtn = document.getElementById('analyzeBtn');
+          const toCameraBtn = document.getElementById('toCameraBtn');
+          const proceedInterviewBtn = document.getElementById('proceedInterviewBtn');
+          const enableCamBtn = document.getElementById('enableCamBtn');
+          const backToUploadBtn = document.getElementById('backToUploadBtn');
+          const startBtn = document.getElementById('startBtn');
+          const stopBtn = document.getElementById('stopBtn');
+          const submitBtn = document.getElementById('submitBtn');
+          const nextQBtn = document.getElementById('nextQuestionBtn');
+          const speakBtn = document.getElementById('speakBtn');
+
+          analyzeBtn.style.display = 'none'; toCameraBtn.style.display = 'none';
+          resumeInput.addEventListener('change', function(){ const fn = this.files && this.files[0] ? this.files[0].name : 'No file chosen'; document.getElementById('file-chosen').textContent = fn; analyzeBtn.style.display = this.files[0] ? 'inline-block' : 'none'; });
+
+          analyzeBtn.addEventListener('click', async ()=>{
+            const file = resumeInput.files[0]; if(!file) return alert('Please select a PDF file');
+            const fd = new FormData(); fd.append('resume', file);
+            try{ const res = await fetch('/api/analyze-resume',{ method:'POST', body: fd }); const data = await res.json(); document.getElementById('resumeResults').innerHTML = `<h3>Skills:</h3><ul>${(data.analysis?.skills||[]).map(s=>`<li>${s}</li>`).join('')}</ul>`; questions = data.questions || []; currentQuestionIndex = 0; interviewStage = 'resume'; toCameraBtn.style.display = 'inline-block'; if(questions.length>0) document.getElementById('questionText').innerText = questions[0]; }catch(err){ console.error(err); alert('Error analyzing resume (see console)'); }
+          });
+
+          toCameraBtn.addEventListener('click', ()=> showPage('page-proctor'));
+          backToUploadBtn.addEventListener('click', ()=> showPage('page-upload'));
+          document.getElementById('restartBtn').addEventListener('click', ()=> location.reload());
+
+          startBtn.addEventListener('click', async ()=>{ try{ const stream = await navigator.mediaDevices.getUserMedia({ audio:true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.start(); startBtn.style.display='none'; stopBtn.style.display='inline-block'; mediaRecorder.ondataavailable = e=> audioChunks.push(e.data); mediaRecorder.onstop = ()=>{ const blob = new Blob(audioChunks,{ type:'audio/webm' }); const url = URL.createObjectURL(blob); document.getElementById('audioPlayer').src = url; document.getElementById('audioPlayer').audioBlob = blob; submitBtn.style.display='inline-block'; }; }catch(e){ alert('Microphone access denied'); } });
+          stopBtn.addEventListener('click', ()=>{ if(mediaRecorder) mediaRecorder.stop(); stopBtn.style.display='none'; startBtn.style.display='inline-block'; });
+
+          submitBtn.addEventListener('click', async ()=>{ const blob = document.getElementById('audioPlayer').audioBlob; if(!blob) return alert('Please record your answer'); const fd = new FormData(); fd.append('audio', blob, 'response.webm'); fd.append('question', interviewStage==='resume'?questions[currentQuestionIndex]:followUpQuestions[currentQuestionIndex]); document.getElementById('feedbackDisplay').innerHTML = '⏳ Analyzing your answer...'; try{ const res = await fetch('/api/process-audio',{ method:'POST', body: fd }); const data = await res.json(); if(data.status==='success'){ allFeedback.push({ question: fd.get('question'), transcript: data.transcript, feedback: data.feedback, proficiency: data.proficiency, confidence: data.confidence }); if(data.follow_up) followUpQuestions.push(data.follow_up); displayQuestionFeedback(data, fd.get('question')); nextQBtn.style.display='inline-block'; } else showErrorFeedback(data.error||'Processing failed'); }catch(e){ console.error(e); showErrorFeedback('Network error - try again'); } });
+
+          nextQBtn.addEventListener('click', ()=>{ if(interviewStage==='resume'){ currentQuestionIndex++; if(currentQuestionIndex>=questions.length){ if(followUpQuestions.length>0){ interviewStage='followup'; currentQuestionIndex=0; document.getElementById('questionText').innerText='Now follow-up questions'; setTimeout(()=>showCurrentQuestion(),800); } else completeInterview(); } else showCurrentQuestion(); } else { currentQuestionIndex++; if(currentQuestionIndex>=followUpQuestions.length) completeInterview(); else showCurrentQuestion(); } });
+
+          speakBtn.addEventListener('click', ()=> speakText(document.getElementById('questionText').innerText));
+
+          window.showCurrentQuestion = function(){ const q = interviewStage==='resume'?questions[currentQuestionIndex]:followUpQuestions[currentQuestionIndex]; document.getElementById('questionText').innerText = q||''; speakText(q||''); startBtn.style.display='inline-block'; stopBtn.style.display='none'; submitBtn.style.display='none'; nextQBtn.style.display='none'; document.getElementById('audioPlayer').src = ''; document.getElementById('feedbackDisplay').innerHTML = ''; };
+
+          async function initProctorModel(){ try{ document.getElementById('proctorState').innerText='Loading model...'; proctorModel = await blazeface.load(); document.getElementById('proctorState').innerText='Model loaded'; logProctor('Model loaded'); }catch(e){ document.getElementById('proctorState').innerText='Load failed'; logProctor('Model load failed: '+e.message); } }
+          async function enableWebcam(){ try{ proctorStream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480 }, audio:false }); const v = document.getElementById('proctorVideo'); v.srcObject = proctorStream; await v.play(); document.getElementById('proctorState').innerText='Active'; logProctor('Webcam started'); if(!proctorModel) await initProctorModel(); startDetectionLoop(); enableCamBtn.innerText='Stop Webcam'; }catch(e){ document.getElementById('proctorState').innerText='Denied'; logProctor('Webcam denied: '+ (e.message||e)); } }
+
+          function logProctor(msg){ const el = document.getElementById('proctorLog'); el.innerText = `[${new Date().toLocaleTimeString()}] ${msg}\n` + el.innerText; }
+          function sendProctorReport(event, details={}){ fetch('/api/proctor-report',{ method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ session_id: sessionId, event, timestamp: (new Date()).toISOString(), details }) }).catch(()=>{}); }
+          function startDetectionLoop(){ const video = document.getElementById('proctorVideo'); if(!video || !proctorModel) return; let lastCount = 0, absent = 0, stable = 0; detectionInterval = setInterval(async ()=>{ try{ const preds = await proctorModel.estimateFaces(video, false); const faces = preds || []; document.getElementById('facesNum').innerText = faces.length; if(faces.length !== lastCount){ sendProctorReport('face_count_change',{ previous: lastCount, current: faces.length }); logProctor(`Face count ${lastCount} -> ${faces.length}`); lastCount = faces.length; } if(faces.length === 0){ absent++; stable = 0; if(absent === 5){ sendProctorReport('absence_detected',{ consecutive_zero_frames: absent }); logProctor('Absence detected'); } document.getElementById('proceedInterviewBtn').style.display='none'; } else { if(absent >= 5){ sendProctorReport('return_detected',{ consecutive_zero_frames: absent }); logProctor('Return detected'); } absent = 0; if(faces.length === 1){ stable++; if(stable >= 3){ document.getElementById('proceedInterviewBtn').style.display='inline-block'; } } else { stable = 0; document.getElementById('proceedInterviewBtn').style.display='none'; } } if(faces.length > 1){ sendProctorReport('multiple_faces_detected',{ faces: faces.length }); logProctor('Multiple faces detected'); } }catch(e){ console.warn('detect error', e); } }, 1000); }
+
+          enableCamBtn.addEventListener('click', async ()=>{ if(!proctorStream) await enableWebcam(); else { if(detectionInterval) { clearInterval(detectionInterval); detectionInterval = null; } proctorStream.getTracks().forEach(t=>t.stop()); proctorStream = null; document.getElementById('proctorVideo').srcObject = null; document.getElementById('proctorState').innerText='Inactive'; logProctor('Webcam stopped'); enableCamBtn.innerText='Enable Webcam'; document.getElementById('proceedInterviewBtn').style.display='none'; } });
+
+          proceedInterviewBtn.addEventListener('click', ()=>{ showPage('page-interview'); if(questions.length>0) window.showCurrentQuestion(); });
+
+        });
+
+        function displayQuestionFeedback(data, question){ document.getElementById('feedbackDisplay').innerHTML = `<h3>Feedback</h3><p>${data.feedback||''}</p><p><strong>Transcript:</strong> ${data.transcript||''}</p>`; }
+        function showErrorFeedback(msg){ document.getElementById('feedbackDisplay').innerHTML = `<div style="color:#f44336">${msg}</div>`; }
+        function completeInterview(){ interviewStage='complete'; document.getElementById('startBtn').disabled=true; document.getElementById('stopBtn').disabled=true; document.getElementById('submitBtn').disabled=true; let html = '<h3>Final Report</h3>'; allFeedback.forEach((it,i)=> html += `<div style="margin-bottom:14px"><h4>Q${i+1}: ${it.question}</h4><p>${it.feedback}</p><p><strong>Your answer:</strong> ${it.transcript}</p></div>`); document.getElementById('finalReport').innerHTML = html; showPage('page-report'); }
+      </script>
+    </body>
+  </html>
+=======
+  <title>AI Mock Interviewer</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url("/static/images/image.jpg") no-repeat center center fixed;
+      background-size: cover;
+      background-blend-mode: lighten;
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 80%;
+      height: 80%;
+      background: url("/static/images/image.jpg") no-repeat center center fixed;
+      background-size: cover;
+      opacity: 0.9;
+      z-index: -2;
+    }
+    header {
+      background-color: #3892ecff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(240, 235, 235, 0.95);
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0);
+    }
+    h1, h2 {
+      color: #2679e6ff;
+    }
+    button {
+      background: #1e90ff;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin: 5px 5px 5px 0;
+    }
+    button:hover {
+      background: #e70e0eff;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .custom-file-upload {
+      display: inline-block;
+      background: #1e90ff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 15px;
+      transition: background 0.3s ease;
+    }
+    .custom-file-upload:hover {
+      background-color: #e60202ff;
+    }
+    #file-chosen {
+      margin-left: 15px;
+      font-style: italic;
+      font-size: 14px;
+      color: #444;
+    }
+    audio {
+      margin-top: 10px;
+      display: block;
+      width: 100%;
+    }
+    .result {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      color: #333;
+    }
+    .question-box {
+      font-size: 1.1rem;
+      background: #f0f8ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #b3d7ff;
+      position: relative;
+    }
+    .speaker-icon {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+    /* Enhanced feedback styles */
+    .feedback-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .feedback-section {
+      margin-bottom: 15px;
+    }
+    .feedback-header {
+      color: #2679e6;
+      margin-bottom: 10px;
+    }
+    .feedback-row {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    .feedback-label {
+      font-weight: bold;
+      min-width: 120px;
+      color: #555;
+    }
+    .feedback-value {
+      flex-grow: 1;
+    }
+    .expected-answer {
+      background: #f8f9fa;
+      border-left: 3px solid #2679e6;
+      padding: 10px;
+      margin: 10px 0;
+      font-style: italic;
+    }
+    .rating {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.9em;
+      margin-left: 5px;
+    }
+    .excellent { background: #4CAF50; color: white; }
+    .good { background: #8BC34A; color: white; }
+    .average { background: #FFC107; color: black; }
+    .needs-work { background: #F44336; color: white; }
+    .progress-container {
+      width: 100%;
+      background: #f3f3f3;
+      border-radius: 5px;
+      margin: 5px 0;
+    }
+    .progress-bar {
+      height: 20px;
+      border-radius: 5px;
+      background: #4CAF50;
+      text-align: center;
+      line-height: 20px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎯 AI Mock Interviewer</h1>
+    <p>Get ready for your interview with Voice AI Agent!</p>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>📄 Upload Resume</h2>
+      <label for="resumeUpload" class="custom-file-upload">📁 Choose Resume File</label>
+      <input type="file" id="resumeUpload" accept=".pdf" />
+      <span id="file-chosen"></span><br><br>
+      <button id="analyzeBtn">Analyze Resume</button>
+      <div id="resumeResults"></div>
+    </div>
+
+    <div class="card">
+      <h2>🎤 Practice Interview</h2>
+
+      <div class="question-box" id="questionDisplay">
+        <span id="questionText">No question yet</span>
+        <span class="speaker-icon" onclick="speakCurrentQuestion()">🔊</span>
+      </div>
+
+      <button id="nextQuestionBtn" disabled>Next Question</button>
+      <button id="startBtn" disabled>🎙️ Start Recording</button>
+      <button id="stopBtn" disabled>🛑 Stop Recording</button>
+      <button id="submitBtn" disabled>📤 Submit Answer</button>
+
+      <audio id="audioPlayer" controls></audio>
+      <div id="feedbackDisplay"></div>
+    </div>
+  </div>
+
+  <script>
+    // State variables
+    let questions = [];
+    let followUpQuestions = [];
+    let currentQuestionIndex = 0;
+    let allFeedback = [];
+    let interviewStage = "resume"; // 'resume', 'followup', or 'complete'
+    let mediaRecorder;
+    let audioChunks = [];
+
+    // Speech functions
+    function speakText(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
+    function speakCurrentQuestion() {
+      let currentQuestion;
+      if (interviewStage === "resume") {
+        currentQuestion = questions[currentQuestionIndex];
+      } else if (interviewStage === "followup") {
+        currentQuestion = followUpQuestions[currentQuestionIndex];
+      }
+      speakText(currentQuestion || "");
+    }
+
+    // Resume analysis
+    document.getElementById("analyzeBtn").onclick = async () => {
+      const fileInput = document.getElementById("resumeUpload");
+      const file = fileInput.files[0];
+      if (!file) return alert("Please select a PDF file.");
+
+      const formData = new FormData();
+      formData.append("resume", file);
+
+      try {
+        const res = await fetch("/api/analyze-resume", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        
+       document.getElementById("resumeResults").innerHTML = `
+          <h3>Skills Found:</h3>
+          <ul>${data.analysis.skills.map(s => `<li>${s}</li>`).join('')}</ul>
+          <h3>Important Rules:</h3>
+          <ol>
+            <li>Rule 1: Be honest and clear in your responses.</li>
+            <li>Rule 2: Speak confidently and maintain eye contact.</li>
+            <li>Rule 3: Give real-world examples whenever possible.</li>
+            <li>Rule 4: Do not rush—think before you answer.</li>
+            <li>        🎯 ALL THE BEST...!!!</li>
+          </ol>
+      `;
+
+        questions = data.questions || [];
+        currentQuestionIndex = 0;
+        interviewStage = "resume";
+
+        if (questions.length > 0) {
+          document.getElementById("questionText").innerText = questions[0];
+          speakCurrentQuestion();
+          document.getElementById("nextQuestionBtn").disabled = false;
+          document.getElementById("startBtn").disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error analyzing resume");
+      }
+    };
+
+    // File input handler
+    document.getElementById("resumeUpload").addEventListener("change", function() {
+      const fileName = this.files[0] ? this.files[0].name : "No file chosen";
+      document.getElementById("file-chosen").textContent = fileName;
+    });
+
+    // Next question handler
+    document.getElementById("nextQuestionBtn").onclick = () => {
+      if (interviewStage === "resume") {
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex >= questions.length) {
+          if (followUpQuestions.length > 0) {
+            interviewStage = "followup";
+            currentQuestionIndex = 0;
+            document.getElementById("questionText").innerText = "Now we'll ask some follow-up questions";
+            setTimeout(() => {
+              showCurrentQuestion();
+            }, 2000);
+          } else {
+            completeInterview();
+          }
+        } else {
+          showCurrentQuestion();
+        }
+      } else if (interviewStage === "followup") {
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex >= followUpQuestions.length) {
+          completeInterview();
+        } else {
+          showCurrentQuestion();
+        }
+      }
+    };
+
+    function showCurrentQuestion() {
+      let currentQuestion;
+      if (interviewStage === "resume") {
+        currentQuestion = questions[currentQuestionIndex];
+      } else if (interviewStage === "followup") {
+        currentQuestion = followUpQuestions[currentQuestionIndex];
+      }
+      
+      document.getElementById("questionText").innerText = currentQuestion;
+      speakCurrentQuestion();
+      document.getElementById("feedbackDisplay").innerHTML = "";
+      document.getElementById("submitBtn").disabled = true;
+    }
+
+    // Recording functionality
+    document.getElementById("startBtn").onclick = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.start();
+        document.getElementById("startBtn").disabled = true;
+        document.getElementById("stopBtn").disabled = false;
+
+        mediaRecorder.ondataavailable = e => {
+          audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/mp3' });
+          const url = URL.createObjectURL(blob);
+          document.getElementById("audioPlayer").src = url;
+          document.getElementById("audioPlayer").audioBlob = blob;
+          document.getElementById("submitBtn").disabled = false;
+        };
+      } catch (err) {
+        alert("Microphone access denied");
+      }
+    };
+
+    document.getElementById("stopBtn").onclick = () => {
+      mediaRecorder.stop();
+      document.getElementById("startBtn").disabled = false;
+      document.getElementById("stopBtn").disabled = true;
+    };
+
+    // Submit answer handler
+    // Updated submit answer handler with proper backend integration
+    document.getElementById("submitBtn").onclick = async () => {
+      const audioBlob = document.getElementById("audioPlayer").audioBlob;
+      if (!audioBlob) return;
+
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "response.mp3");
+      
+      // Add current question context to help backend generate relevant feedback
+      const currentQuestion = interviewStage === "resume" 
+        ? questions[currentQuestionIndex] 
+        : followUpQuestions[currentQuestionIndex];
+      formData.append("question", currentQuestion);
+
+      document.getElementById("feedbackDisplay").innerHTML = "⏳ Analyzing your answer...";
+
+      try {
+        const res = await fetch("/api/process-audio", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          // Store feedback for final display
+          allFeedback.push({
+            question: currentQuestion,
+            transcript: data.transcript,
+            feedback: data.feedback,
+            expected_answer: data.expected_answer,
+            proficiency: data.proficiency || 75, // Default values if not provided
+            confidence: data.confidence || 70    // Default values if not provided
+          });
+
+          // Store any follow-up questions
+          if (data.follow_up) {
+            followUpQuestions.push(data.follow_up);
+          }
+
+          // Display enhanced feedback
+          displayQuestionFeedback(data, currentQuestion);
+        } else {
+          showErrorFeedback(data.error);
+        }
+      } catch (err) {
+        console.error(err);
+        showErrorFeedback("Network error - please try again");
+      }
+    };
+
+    // Enhanced feedback display function
+    function displayQuestionFeedback(feedbackData, question) {
+      const proficiency = feedbackData.proficiency || 75;
+      const confidence = feedbackData.confidence || 70;
+      
+      const proficiencyLevel = getRatingLevel(proficiency, 'proficiency');
+      const confidenceLevel = getRatingLevel(confidence, 'confidence');
+
+      const feedbackHTML = `
+        <div class="feedback-container">
+          <div class="feedback-section">
+            <h3 class="feedback-header">Question Analysis</h3>
+            <div class="feedback-row">
+              <span class="feedback-label">Question:</span>
+              <span class="feedback-value">${question}</span>
+            </div>
+            <div class="feedback-row">
+              <span class="feedback-label">Your Answer:</span>
+              <span class="feedback-value">${feedbackData.transcript || "Not available"}</span>
+            </div>
+          </div>
+          
+          <div class="feedback-section">
+            <h3 class="feedback-header">Evaluation</h3>
+            <div class="feedback-row">
+              <span class="feedback-label">Feedback:</span>
+              <span class="feedback-value">${feedbackData.feedback || "No specific feedback available"}</span>
+            </div>
+            
+            <div class="feedback-row">
+              <span class="feedback-label">Proficiency:</span>
+              <span class="feedback-value">
+                <span class="rating ${proficiencyLevel.class}">${proficiencyLevel.text}</span>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: ${proficiency}%">${proficiency}%</div>
+                </div>
+              </span>
+            </div>
+            
+            <div class="feedback-row">
+              <span class="feedback-label">Confidence:</span>
+              <span class="feedback-value">
+                <span class="rating ${confidenceLevel.class}">${confidenceLevel.text}</span>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: ${confidence}%">${confidence}%</div>
+                </div>
+              </span>
+            </div>
+          </div>
+          
+          <div class="feedback-section">
+            <h3 class="feedback-header">Expected Answer</h3>
+            <div class="expected-answer">
+              ${feedbackData.expected_answer || "No expected answer provided by the system"}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("feedbackDisplay").innerHTML = feedbackHTML;
+    }
+
+    function getRatingLevel(score, type) {
+      if (type === 'proficiency') {
+        if (score >= 85) return { text: "Excellent", class: "excellent" };
+        if (score >= 70) return { text: "Good", class: "good" };
+        if (score >= 50) return { text: "Average", class: "average" };
+        return { text: "Needs Work", class: "needs-work" };
+      } else {
+        if (score >= 80) return { text: "High", class: "excellent" };
+        if (score >= 60) return { text: "Moderate", class: "good" };
+        if (score >= 40) return { text: "Low", class: "average" };
+        return { text: "Very Low", class: "needs-work" };
+      }
+    }
+
+    function showErrorFeedback(message) {
+      document.getElementById("feedbackDisplay").innerHTML = `
+        <div class="feedback-container" style="color: #F44336;">
+          <h3>❌ Error Processing Feedback</h3>
+          <p>${message}</p>
+          <p>Please try answering again or contact support if the problem persists.</p>
+        </div>
+      `;
+    }
+    // complete interview function
+    function completeInterview() {
+      interviewStage = "complete";
+      document.getElementById("questionText").innerText = "✅ Interview Complete!";
+      document.getElementById("nextQuestionBtn").disabled = true;
+      document.getElementById("startBtn").disabled = true;
+      document.getElementById("stopBtn").disabled = true;
+      document.getElementById("submitBtn").disabled = true;
+
+      // Show comprehensive feedback
+      let feedbackHTML = `<div class="feedback-section"><h2>📊 Final Feedback Report</h2>`;
+      
+      allFeedback.forEach((item, index) => {
+        feedbackHTML += `
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+            <h3>Question ${index + 1}: ${item.question}</h3>
+            <p><strong>Your Answer:</strong> ${item.transcript}</p>
+            <p><strong>Feedback:</strong> ${item.feedback}</p>
+          </div>
+        `;
+      });
+
+      feedbackHTML += `</div>`;
+      document.getElementById("feedbackDisplay").innerHTML = feedbackHTML;
+    }
+  </script>
+</body>
+</html>
+>>>>>>> d5149f326e8f0ab22c2dfa1ba991c11400a0bf57
