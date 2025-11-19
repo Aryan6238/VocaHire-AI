@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 AI Mock Interviewer
 ====================
 
