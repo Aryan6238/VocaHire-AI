@@ -1,5 +1,4 @@
 🚀AI Mock Interviewer🚀🤖
-====================
 
 One-line summary📝
 ----------------
