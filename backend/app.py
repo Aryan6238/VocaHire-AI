@@ -364,8 +364,6 @@ def count_filler_words(text):
 
 # [Rest of your routes remain unchanged...]
 
-<<<<<<< HEAD
-
 # ----------- Proctoring Report Endpoint -----------
 @app.route('/api/proctor-report', methods=['POST'])
 def proctor_report():
@@ -401,8 +399,6 @@ def proctor_report():
         print(f"❌ Error in proctor_report: {e}")
         return jsonify({"error": str(e)}), 500
 
-=======
->>>>>>> d5149f326e8f0ab22c2dfa1ba991c11400a0bf57
 # ------------------- RUN APP -------------------
 if __name__ == '__main__':
     with app.app_context():
