@@ -1,15 +1,14 @@
-AI Mock Interviewer
+🚀AI Mock Interviewer🚀🤖
 
-
-One-line summary
+One-line summary📝
 ----------------
-An interactive mock interviewer that analyzes a resume, asks voice-based interview questions, records answers, and provides feedback — with client-side webcam proctoring to detect absence or multiple people.
+🤖🚀An interactive mock interviewer that analyzes a resume, asks voice-based interview questions, records answers, and provides feedback — with client-side webcam proctoring to detect absence or multiple people.
 
-Contents of this README
+Contents of this README 📝
 -----------------------
 - Project summary
 - Tech stack
-- Architecture (see `frontend/templates/architecture.png` or the `architecture.png` you saved)
+- Architecture 
 - Setup & Run (PowerShell commands)
 - Quick smoke tests
 - APIs & data shapes
@@ -18,7 +17,7 @@ Contents of this README
 - Submission checklist
 - Known limitations & next steps
 
-Project summary
+Project summary📝
 ---------------
 This project accepts a resume (PDF), extracts skills and generates interview questions. The user records spoken answers which are processed by the backend for transcription and feedback. A lightweight client-side proctoring component (TFJS + BlazeFace) detects face-count changes and reports events to the backend. Proctor reports are saved as JSON-lines in `uploads/proctor_logs/`.
 
@@ -49,9 +48,9 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Create a `.env` file from `.env.example` and fill values.
+Create a `.env` file
 
-(If your project requires DB initialization)
+
 ```powershell
 python create_db.py
 ```
@@ -110,7 +109,6 @@ Proctoring and logs
 
 -------------------
 - README.md (this file)
-- demo.mp4 (3–6 minutes)
 - Architecture_Diag.pdf (diagram)
 - .env.example
 
@@ -213,3 +211,4 @@ For major changes, please open an issue first to discuss what you’d like to ch
 📜 License
 ------------------------------------------------------------
 MIT License
+
